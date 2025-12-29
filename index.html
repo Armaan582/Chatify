@@ -60,7 +60,7 @@
                 radial-gradient(at 0% 0%, rgba(99, 102, 241, 0.15) 0px, transparent 50%),
                 radial-gradient(at 100% 100%, rgba(168, 85, 247, 0.15) 0px, transparent 50%);
             color: var(--text-main);
-            /* Use dvh for better mobile browser support (address bar handling) */
+            /* Use dvh for better mobile browser support */
             height: 100dvh;
             width: 100vw;
             display: flex;
@@ -567,7 +567,7 @@
         }
         .send-btn:active { transform: scale(0.9); }
 
-        /* Typing Wave Animation */
+        /* Typing Wave Animation (CSS) */
         .typing-indicator {
             padding-left: 24px; margin-bottom: 24px;
             height: 24px; display: flex; align-items: center;
@@ -651,7 +651,7 @@
             <button class="btn" onclick="router.navigate('auth')">
                 Get Started <i class="ph-bold ph-arrow-right" style="vertical-align: middle; margin-left: 5px;"></i>
             </button>
-            <p class="text-center text-xs text-muted mt-4">Version 3.5 • Premium Edition</p>
+            <p class="text-center text-xs text-muted mt-4">Version 4.0 • Premium Edition</p>
         </div>
     </section>
 
@@ -851,14 +851,14 @@
 
 <script>
 /**
- * CHATIFY PREMIUM - V3.5 FINAL
+ * CHATIFY PREMIUM - V4.0 (TYPING & FIXES)
  */
 
 // --- WEBSOCKET SETUP ---
 let socket = null;
-const SERVER_URL = "wss://chatify-0uz6.onrender.com";
+const SERVER_URL = "ws://localhost:8765";
 let ONLINE_USERS = [];
-const APP_VERSION = '4.0'; // Change this to force clear data
+const APP_VERSION = '4.0'; // Updated to force data clear
 
 function connectSocket(username) {
     if (socket && socket.readyState === WebSocket.OPEN) return;
@@ -913,6 +913,7 @@ const storage = {
 };
 
 const util = {
+    // FIX 2: Consistent Avatar with Initials
     generateAvatar: (name) => {
         return `https://ui-avatars.com/api/?name=${name}&background=6366f1&color=fff&bold=true`;
     },
@@ -949,12 +950,12 @@ const EMOJIS = ['😀','😂','🥰','😎','🤔','😮','😢','😡','👍','
 const app = {
     theme: 'light',
     init: () => {
-        // FIX 3: DATA CLEANUP
+        // FIX 3: DATA CLEANUP ON VERSION CHANGE
         const currentVer = localStorage.getItem('chatify_version');
         if (currentVer !== APP_VERSION) {
             localStorage.clear();
             localStorage.setItem('chatify_version', APP_VERSION);
-            console.log("App updated, data cleared.");
+            console.log("App updated to 4.0, old data cleared.");
         }
 
         state.init();
@@ -1044,7 +1045,6 @@ const auth = {
         const p = document.getElementById('login-password').value;
         if (!u || !p) return util.showToast('Please fill all fields', 'error');
         
-        // FIX 2: Consistent Avatar
         state.currentUser = { 
             username: u, 
             name: u, 
@@ -1136,10 +1136,10 @@ const chatHome = {
         }
 
         sorted.forEach((chat, index) => {
-            const lastMsg = chat.messages[chat.messages.length - 1];
+            // FIX 4: Safe Preview
+            const lastMsg = chat.messages.length > 0 ? chat.messages[chat.messages.length - 1] : null;
             const timeDisplay = lastMsg ? util.formatTime(lastMsg.time) : '';
-            // FIX 4: Safe Chat Preview
-            const msgText = lastMsg ? lastMsg.text : 'New Chat';
+            const msgText = lastMsg ? lastMsg.text : 'Tap to start chatting';
             
             let statusIcon = '';
             if (lastMsg && lastMsg.sender === 'me') {
@@ -1193,7 +1193,6 @@ const newChat = {
         container.insertAdjacentHTML('beforeend', `<div class="section-title">Online Users</div>`);
 
         ONLINE_USERS.forEach((user) => {
-            // FIX 2: Consistent Avatar
             const avatarUrl = util.generateAvatar(user);
             const html = `
             <div class="chat-item slide-up" onclick="newChat.start('${user}')">
@@ -1260,7 +1259,7 @@ const conversation = {
                 avatar: util.generateAvatar(username),
                 messages: [],
                 unread: 0,
-                lastMsgTime: null
+                lastMsgTime: new Date().toISOString()
             };
             state.chats.push(chat);
             storage.set("chats", state.chats);
@@ -1398,7 +1397,6 @@ const conversation = {
     sendTyping: () => {
         if(!conversation.activeChat) return;
         
-        // Throttling logic could be here, but for simplicity:
         if(socket && socket.readyState === WebSocket.OPEN) {
             socket.send(JSON.stringify({
                 type: 'typing',
@@ -1548,5 +1546,4 @@ window.onload = app.init;
 
 </script>
 </body>
-
 </html>
